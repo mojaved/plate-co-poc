@@ -3,23 +3,25 @@ let labelTotal = document.getElementById("lblTotal");
 
 let basket = JSON.parse(localStorage.getItem("data")) || [];
 
+const updateCalculations = () => {
+  calculation();
+  generateCartItems();
+  totalAmount();
+};
+
 /**
- * ! Finding the number of odd Items for special discount
+ * ! Counting the number of full price Items for special discount
  */
-let findOddNumbers = (s, e) => {
-  let arr = [];
-  while (s <= e) {
-    arr.push(s);
-    s += 1;
-  }
+const countEvenItems = (e) => {
+  let arr = Array.from({ length: e }, (_, i) => i + 1);
   return arr.filter((n) => n % 2).length;
 };
 
 /**
  * ! Calculating the special discount
  */
-let calculateSpecialDiscount = (price, items) => {
-  const fullPriceItems = findOddNumbers(1, items);
+const specialDiscount = (price, items) => {
+  const fullPriceItems = countEvenItems(items);
   const dscItems = items - fullPriceItems;
   const halfPrice = price / 2;
   const totalPrice = halfPrice * dscItems + price * fullPriceItems;
@@ -30,23 +32,21 @@ let calculateSpecialDiscount = (price, items) => {
  * ! Calculating the total cart items as a badge on header
  */
 
-let calculation = () => {
+const calculation = () => {
   let cartIcon = document.getElementById("cartCounter");
-  cartIcon.innerHTML = basket.map((x) => x.quantity).reduce((x, y) => x + y, 0);
+  cartIcon.innerHTML = basket.reduce((x, y) => x + y.quantity, 0);
 };
-
-calculation();
 
 /**
  * ! Generating the carts as per product added in the cart
  */
 
-let generateCartItems = () => {
-  if (basket.length !== 0) {
-    return (shoppingCart.innerHTML = basket
+const generateCartItems = () => {
+  if (basket.length > 0) {
+    shoppingCart.innerHTML = basket
       .map((x) => {
         let { code, quantity } = x;
-        let search = plates.find((x) => x.code === code) || [];
+        let search = plates.find((x) => x.code === code) || {};
         let { image, price, name } = search;
         return `
         <div class="plate-co-cart-item">
@@ -64,22 +64,24 @@ let generateCartItems = () => {
   
             <div class="cart-buttons">
               <div class="plate-co-shop-card-buttons">
-                <i onclick="decrementQuantity('${code}')" class="fa fa-minus"></i>
+                <i onclick="adjustQuantity('${code}','-')" class="fa fa-minus"></i>
                 <div id=${code} class="quantity">${quantity}</div>
-                <i onclick="incrementQuantity('${code}')" class="fa fa-plus"></i>
+                <i onclick="adjustQuantity('${code}','+')" class="fa fa-plus"></i>
               </div>
             </div>
   
             <h3>$ ${(code === "R01"
-              ? calculateSpecialDiscount(price, quantity)
+              ? specialDiscount(price, quantity)
               : quantity * price
-            ).toFixed(2)}</h3>
+            )
+              .toFixed(3)
+              .slice(0, -1)}</h3>
           
           </div>
         </div>
         `;
       })
-      .join(""));
+      .join("");
   } else {
     shoppingCart.innerHTML = "";
     labelTotal.innerHTML = `
@@ -91,46 +93,35 @@ let generateCartItems = () => {
   }
 };
 
-generateCartItems();
-
 /**
- * ! Increment the selected product quantity by 1
+ * ! Increment/Decrement the selected product quantity by 1
  */
 
-let incrementQuantity = (code) => {
+const adjustQuantity = (code, operator) => {
   let search = basket.find((x) => x.code === code);
-
-  if (search === undefined) {
-    basket.push({
-      id: selectedItem.id,
-      quantity: 1,
-    });
-  } else {
-    search.quantity += 1;
-  }
-  calculation();
-  generateCartItems();
-  totalAmount();
-  localStorage.setItem("data", JSON.stringify(basket));
-};
-
-/**
- * ! Decrement the selected product quantity by 1
- */
-
-let decrementQuantity = (code) => {
-  let search = basket.find((x) => x.code === code);
-
-  if (search === undefined) return;
-  else if (search.quantity === 0) return;
-  else {
-    search.quantity -= 1;
+  switch (operator) {
+    case "+":
+      if (!search) {
+        basket.push({
+          id: selectedItem.id,
+          quantity: 1,
+        });
+      } else {
+        search.quantity += 1;
+      }
+      break;
+    case "-":
+      if (!search || search.quantity === 0) {
+        return;
+      } else {
+        search.quantity -= 1;
+      }
+      break;
+    default:
+      break;
   }
 
-  basket = basket.filter((x) => x.quantity !== 0);
-  calculation();
-  generateCartItems();
-  totalAmount();
+  updateCalculations();
   localStorage.setItem("data", JSON.stringify(basket));
 };
 
@@ -138,20 +129,20 @@ let decrementQuantity = (code) => {
  * ! Calculate total amount of the selected Products with shipment charges and special discounts
  */
 
-let totalAmount = () => {
-  if (basket.length !== 0) {
+const totalAmount = () => {
+  if (basket.length > 0) {
     let amount = basket
-      .map((item) => {
+      .reduce((acc, item) => {
         let { code, quantity } = item;
         let filterData = plates.find((x) => x.code === code);
         if (code === "R01") {
-          return calculateSpecialDiscount(filterData.price, quantity);
+          return acc + specialDiscount(filterData.price, quantity);
         } else {
-          return filterData.price * quantity;
+          return acc + filterData.price * quantity;
         }
-      })
-      .reduce((x, y) => x + y, 0)
-      .toFixed(2);
+      }, 0)
+      .toFixed(3)
+      .slice(0, -1);
 
     let shipmentAmount = 0;
     if (Number(amount) < 50 && Number(amount) > 0) {
@@ -161,23 +152,25 @@ let totalAmount = () => {
     }
     return (labelTotal.innerHTML = `
       <h2>Sub Total : $ ${amount}</h2>
-      <h2>Shipment Charges : $ ${shipmentAmount.toFixed(2)}</h2>
-      <h2>Total Bill : $ ${(Number(amount) + shipmentAmount).toFixed(2)}</h2>
+      <h2>Shipment Charges : $ ${shipmentAmount}</h2>
+      <h2>Total Bill : $ ${(Number(amount) + shipmentAmount)
+        .toFixed(3)
+        .slice(0, -1)}</h2>
       <button onclick="clearCart()" class="removeAll">Clear Cart</button>
       `);
-  } else return;
+  }
 };
 
-totalAmount();
+updateCalculations();
+// totalAmount();
 
 /**
  * ! Used to clear the cart at once
  */
 
-let clearCart = () => {
+const clearCart = () => {
   basket = [];
-  generateCartItems();
-  calculation();
+  updateCalculations();
   localStorage.setItem("data", JSON.stringify(basket));
 };
 
@@ -185,10 +178,8 @@ let clearCart = () => {
  * ! Remove cart items
  */
 
-let removeItem = (code) => {
+const removeItem = (code) => {
   basket = basket.filter((x) => x.code !== code);
-  calculation();
-  generateCartItems();
-  totalAmount();
+  updateCalculations();
   localStorage.setItem("data", JSON.stringify(basket));
 };

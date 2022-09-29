@@ -6,8 +6,8 @@ let basket = JSON.parse(localStorage.getItem("data")) || [];
  * ! Generating the products store cards
  */
 
-let generateProducts = () => {
-  return (shop.innerHTML = plates
+(() => {
+  shop.innerHTML = plates
     .map((item) => {
       let { code, name, image, price } = item;
       return `
@@ -21,19 +21,15 @@ let generateProducts = () => {
     </div>
       `;
     })
-    .join(""));
-};
-
-generateProducts();
-
+    .join("");
+})();
 
 /**
  * ! Adding items to the cart
  */
 
-let addItemToCart = (code) => {
+const addItemToCart = (code) => {
   let search = basket.find((x) => x.code === code);
-
   if (search === undefined) {
     basket.push({
       code: code,
@@ -43,7 +39,6 @@ let addItemToCart = (code) => {
     search.quantity += 1;
   }
 
-  console.log(basket);
   calculation();
   localStorage.setItem("data", JSON.stringify(basket));
 };
@@ -52,9 +47,9 @@ let addItemToCart = (code) => {
  * ! Calculating the total cart items as a badge on header
  */
 
-let calculation = () => {
+const calculation = () => {
   let cartIcon = document.getElementById("cartCounter");
-  cartIcon.innerHTML = basket.map((x) => x.quantity).reduce((x, y) => x + y, 0);
+  cartIcon.innerHTML = basket.reduce((x, y) => x + y.quantity, 0);
 };
 
 calculation();

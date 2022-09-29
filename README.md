@@ -26,19 +26,19 @@ Main file is index.html
         ├── data.js
             * It contains pre-populated data in the form of array of plates.
         ├── store.js
-            1. generateProducts() :It generate cards on the base of plates array and display on the page.
+            1. (()=>{})() : Self invoking function which generate cards on the base of plates array and display on the page.
             2. addItemToCart() : add/update the selected item quantity in the local storage of the browser.
             3. calculation() : Calculate the no of items added in the cart and display its count on the header cart icon.
         ├── cart.js
-            1. findOddNumbers() : Helper function for finding the odd numbers, this function is used for calculating the special offers.
-            2. calculateSpecialDiscount() : Just for calculating the product special offer total.
+            1. countEvenItems() : Helper function for counting the number of full price Items for special discount.
+            2. specialDiscount() : Just for calculating the product special offer total.
             3. calculation() : Calculate the no of items added in the cart and display its count on the header cart icon.
             4. generateCartItems(): It generate cart items on the basis of storage data and display it on the cart page.
-            5. incrementQuantity(): It increments product cart quantity on the fly.
-            6. decrementQuantity(): It decrements product cart quantity on the fly.
-            7. totalAmount(): Calculates total amount from the cart, shipping cost and display it on the top of the page.
-            8. clearCart(): It removes all the cart items from the carts page and from the storage as well.
-            9. removeItem(): It removes the specific cart from the carts page and update the storage.
+            5. adjustQuantity(): Increment/Decrement the selected product quantity by 1 on the fly.
+            6. totalAmount(): Calculates total amount from the cart, shipping cost and display it on the top of the page.
+            7. clearCart(): It removes all the cart items from the carts page and from the storage as well.
+            8. removeItem(): It removes the specific cart from the carts page and update the storage.
+            9. updateCalculations(): Just a wrapper which call calculation(), generateCartItems() & totalAmount() inside it.
 
     ├── images                  # Images used in the application
     ├── index.html              # Home page
